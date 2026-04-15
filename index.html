@@ -26,7 +26,6 @@
 
         #phone-container { flex: 1; position: relative; display: flex; flex-direction: column; background-color: #ffffff; background-size: cover; background-position: center; overflow: hidden; }
 
-        /* 状态栏：层级最高 */
         .status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 14px; font-weight: 600; z-index: 3000; color: #000; position: relative; }
         .status-icons { display: flex; gap: 8px; align-items: center; }
         .icon-svg { height: 14px; fill: currentColor; }
@@ -42,13 +41,13 @@
         }
         .app-icon span { color: #000; font-size: 11px; margin-top: 6px; font-weight: 500; text-align: center; width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* 应用窗口：Padding-top 留出状态栏 */
+        /* 应用窗口 */
         .app-window { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2000; display: none; flex-direction: column; padding-top: 44px; }
         #app-body { flex: 1; overflow-y: auto; background: #fff; }
         .app-header { padding: 5px 16px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid var(--border-color-white); }
         .close-icon { font-size: 22px; font-weight: 300; color: #000; cursor: pointer; }
 
-        /* Instagram 内部样式 */
+        /* Instagram 样式 */
         .ig-nav-top { display: flex; justify-content: space-between; align-items: center; padding: 4px 16px 0; font-size: 18px; font-weight: 700; }
         .ig-stats-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
         .ig-avatar { width: 80px; height: 80px; border-radius: 50%; border: 1px solid var(--border-color-white); object-fit: cover; }
@@ -62,27 +61,22 @@
         .ig-tab-bar { display: flex; margin-top: 14px; border-top: 0.5px solid var(--border-color-white); }
         .ig-tab { flex: 1; display: flex; justify-content: center; padding: 12px 0; cursor: pointer; }
         .ig-tab.active { border-bottom: 1px solid #000; }
-        .ig-tab svg { width: 24px; height: 24px; stroke: var(--ig-icon-inactive); fill: none; }
-        .ig-tab.active svg { stroke: #000; }
+        .ig-tab svg { width: 24px; height: 24px; }
         .ig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #fff; }
         .ig-grid-item { aspect-ratio: 1; background: #fafafa; }
         .ig-grid-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Themes 紧凑布局：适应画面不滑动 */
+        /* Themes 紧凑布局 */
         .theme-panel { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         .tool-card { background: #f9f9f9; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color-white); }
-        .tool-card h4 { margin: 0 0 8px; font-size: 13px; color: #333; }
+        .tool-card h4 { margin: 0 0 8px; font-size: 13px; }
         .range-group { margin-bottom: 10px; }
         .range-group label { font-size: 11px; display: block; margin-bottom: 3px; color: #666; }
-        .range-group input { width: 100%; height: 4px; accent-color: #000; cursor: pointer; }
-        
+        .range-group input { width: 100%; height: 4px; accent-color: #000; }
         .icon-edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .mini-icon { width: 24px; height: 24px; border-radius: 5px; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; flex-shrink: 0; }
-        .icon-edit-row input { padding: 4px 6px; border: 1px solid #eee; border-radius: 4px; font-size: 11px; outline: none; }
-        .input-letter { width: 35px; text-align: center; }
-        .input-name { flex: 1; }
-        
-        .btn-black { background: #000; color: #fff; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: 600; font-size: 12px; cursor: pointer; }
+        .mini-icon { width: 24px; height: 24px; border-radius: 5px; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .icon-edit-row input { padding: 4px 6px; border: 1px solid #eee; border-radius: 4px; font-size: 11px; }
+        .btn-black { background: #000; color: #fff; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: 600; font-size: 12px; }
         input[type="file"] { display: none; }
     </style>
 </head>
@@ -98,9 +92,7 @@
                 <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4" y="9" width="11" height="6" rx="1" fill="currentColor"/><path d="M20 10v4" stroke="currentColor" stroke-width="2"/></svg>
             </div>
         </div>
-
         <div class="home-screen" id="home-grid"></div>
-
         <div id="app-layer" class="app-window">
             <div class="app-header">
                 <span id="app-back-btn" class="close-icon">✕</span>
@@ -113,16 +105,46 @@
 </div>
 
 <script>
+    // --- 数据库管理 (IndexedDB) ---
+    const DB_NAME = "SimulatorDB";
+    const STORE_NAME = "MediaFiles";
+    let db;
+
+    function initDB() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore(STORE_NAME);
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve();
+            };
+        });
+    }
+
+    async function saveMedia(key, data) {
+        if (!db) return;
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(data, key);
+    }
+
+    async function loadMedia(key) {
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const request = tx.objectStore(STORE_NAME).get(key);
+            request.onsuccess = () => resolve(request.result);
+        });
+    }
+
+    // --- 核心逻辑 ---
     const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23DBDBDB' d='M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256S397.4 0 256 0zm0 464c-114.7 0-208-93.3-208-208S141.3 48 256 48s208 93.3 208 208-93.3 208-208 208z'/%3E%3Cpath fill='%23DBDBDB' d='M256 128c-44.1 0-80 35.9-80 80s35.9 80 80 80 80-35.9 80-80-35.9-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm0 48c-70.7 0-128 57.3-128 128 0 8.8 7.2 16 16 16h224c8.8 0 16-7.2 16-16 0-70.7-57.3-128-128-128z'/%3E%3C/svg%3E";
 
     const INITIAL_STATE = {
-        frameEnabled: true,
-        width: 375, height: 750,
-        wallpaper: '#FFFFFF',
-        userName: 'username', bio: '',
+        frameEnabled: true, width: 375, height: 750,
+        wallpaper: '#FFFFFF', userName: 'username', bio: '',
         postCount: '0', followers: '0', following: '0',
-        userAvatar: DEFAULT_AVATAR,
-        gridImages: Array(9).fill('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P8/AAb0An7f96S3AAAAAElFTkSuQmCC'),
         apps: [
             { id: 'space', name: 'Instagram', letter: 'I' },
             { id: 'theme', name: 'Themes', letter: 'T' },
@@ -131,17 +153,31 @@
         ]
     };
 
-    let state = JSON.parse(localStorage.getItem('SIM_Pixel_V105')) || INITIAL_STATE;
+    let state = JSON.parse(localStorage.getItem('SIM_CONFIG_V2')) || INITIAL_STATE;
+    let cachedImages = { avatar: DEFAULT_AVATAR, wallpaper: '#FFFFFF', posts: Array(9).fill('') };
 
     window.simulatorAPI = {
-        save() { localStorage.setItem('SIM_Pixel_V105', JSON.stringify(state)); },
-        renderMain() {
+        save() { localStorage.setItem('SIM_CONFIG_V2', JSON.stringify(state)); },
+        
+        async loadAllImages() {
+            cachedImages.avatar = await loadMedia('userAvatar') || DEFAULT_AVATAR;
+            const wp = await loadMedia('wallpaper');
+            if(wp) cachedImages.wallpaper = wp;
+            for(let i=0; i<9; i++) {
+                cachedImages.posts[i] = await loadMedia(`post_${i}`) || '';
+            }
+        },
+
+        async renderMain() {
             const wrapper = document.getElementById('phone-wrapper');
             const container = document.getElementById('phone-container');
             wrapper.className = state.frameEnabled ? 'has-frame' : 'is-fullscreen';
             if(state.frameEnabled) { wrapper.style.width = state.width + 'px'; wrapper.style.height = state.height + 'px'; }
-            container.style.backgroundColor = state.wallpaper.startsWith('#') ? state.wallpaper : '';
-            container.style.backgroundImage = state.wallpaper.startsWith('#') ? 'none' : `url(${state.wallpaper})`;
+            
+            const wp = cachedImages.wallpaper;
+            container.style.backgroundColor = wp.startsWith('#') ? wp : '';
+            container.style.backgroundImage = wp.startsWith('data:') ? `url(${wp})` : 'none';
+            
             const home = document.getElementById('home-grid');
             home.innerHTML = '';
             state.apps.forEach(app => {
@@ -152,15 +188,17 @@
             });
             const d = new Date(); document.getElementById('clock').innerText = String(d.getHours()).padStart(2,'0') + ":" + String(d.getMinutes()).padStart(2, '0');
         },
+
         openApp(id) {
-            const layer = document.getElementById('app-layer'), body = document.getElementById('app-body'), actionBtn = document.getElementById('app-action-btn'), backBtn = document.getElementById('app-back-btn'), activeTitle = document.getElementById('active-app-name');
+            const layer = document.getElementById('app-layer'), body = document.getElementById('app-body'), actionBtn = document.getElementById('app-action-btn'), activeTitle = document.getElementById('active-app-name');
             layer.style.display = 'flex'; body.innerHTML = ''; actionBtn.innerText = '';
-            backBtn.onclick = () => this.closeApp();
+            document.getElementById('app-back-btn').onclick = () => this.closeApp();
+            
             if(id === 'space') { activeTitle.innerText = ''; this.renderIG(body); }
             else if(id === 'theme') { activeTitle.innerText = 'Themes'; this.renderTheme(body); }
             else if(id === 'edit_profile') { 
                 activeTitle.innerText = 'Edit profile'; 
-                backBtn.onclick = () => this.openApp('space');
+                document.getElementById('app-back-btn').onclick = () => this.openApp('space');
                 actionBtn.innerText = 'Done';
                 actionBtn.onclick = () => {
                     state.userName = document.getElementById('in-name').value;
@@ -173,12 +211,14 @@
                 this.renderEdit(body);
             }
         },
+
         closeApp() { document.getElementById('app-layer').style.display = 'none'; },
+
         renderIG(container) {
             container.innerHTML = `
                 <div class="ig-nav-top"><span>@${state.userName}</span><b>☰</b></div>
                 <div class="ig-stats-row">
-                    <img src="${state.userAvatar}" class="ig-avatar" onclick="document.getElementById('f-av').click()">
+                    <img src="${cachedImages.avatar}" class="ig-avatar" onclick="document.getElementById('f-av').click()">
                     <input type="file" id="f-av" onchange="simulatorAPI.upload(this, 'avatar')">
                     <div class="ig-stats-box">
                         <div class="ig-stat-item"><span class="stat-num">${state.postCount}</span><span class="stat-label">posts</span></div>
@@ -192,12 +232,13 @@
                     <button class="ig-btn">Share profile</button>
                 </div>
                 <div class="ig-tab-bar">
-                    <div class="ig-tab active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" fill="#000"></rect><line x1="3" y1="9" x2="21" y2="9" stroke="#fff"></line><line x1="3" y1="15" x2="21" y2="15" stroke="#fff"></line><line x1="9" y1="3" x2="9" y2="21" stroke="#fff"></line><line x1="15" y1="3" x2="15" y2="21" stroke="#fff"></line></svg></div>
-                    <div class="ig-tab"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#8e8e8e" stroke-width="2"></path><circle cx="12" cy="7" r="4" stroke="#8e8e8e" stroke-width="2"></circle></svg></div>
+                    <div class="ig-tab active"><svg viewBox="0 0 24 24" width="24"><rect x="3" y="3" width="18" height="18" rx="1" fill="#000"></rect><line x1="3" y1="9" x2="21" y2="9" stroke="#fff"></line><line x1="3" y1="15" x2="21" y2="15" stroke="#fff"></line><line x1="9" y1="3" x2="9" y2="21" stroke="#fff"></line><line x1="15" y1="3" x2="15" y2="21" stroke="#fff"></line></svg></div>
+                    <div class="ig-tab"><svg viewBox="0 0 24 24" width="24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#8e8e8e" stroke-width="2" fill="none"></path><circle cx="12" cy="7" r="4" stroke="#8e8e8e" stroke-width="2" fill="none"></circle></svg></div>
                 </div>
-                <div class="ig-grid">${state.gridImages.map((img, i) => `<div class="ig-grid-item" onclick="document.getElementById('f-p-${i}').click()"><img src="${img}"><input type="file" id="f-p-${i}" onchange="simulatorAPI.upload(this, 'post', ${i})"></div>`).join('')}</div>
+                <div class="ig-grid">${cachedImages.posts.map((img, i) => `<div class="ig-grid-item" onclick="document.getElementById('f-p-${i}').click()"><img src="${img || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}"><input type="file" id="f-p-${i}" onchange="simulatorAPI.upload(this, 'post', ${i})"></div>`).join('')}</div>
             `;
         },
+
         renderEdit(body) {
             body.innerHTML = `<div style="padding:15px;">
                 <label style="font-size:10px; color:gray;">USERNAME</label><br><input type="text" id="in-name" value="${state.userName}" style="width:100%; margin-bottom:12px; border:1px solid #eee; padding:6px; font-size:13px;">
@@ -209,6 +250,7 @@
                 </div>
             </div>`;
         },
+
         renderTheme(container) {
             container.innerHTML = `
                 <div class="theme-panel">
@@ -220,18 +262,16 @@
                         <div class="range-group"><label>Width: ${state.width}px</label><input type="range" min="300" max="600" value="${state.width}" oninput="state.width=this.value; simulatorAPI.renderMain(); simulatorAPI.openApp('theme')"></div>
                         <div class="range-group"><label>Height: ${state.height}px</label><input type="range" min="500" max="900" value="${state.height}" oninput="state.height=this.value; simulatorAPI.renderMain(); simulatorAPI.openApp('theme')"></div>
                     </div>
-                    
                     <div class="tool-card">
                         <h4>App Icons & Labels</h4>
                         ${state.apps.map((app, i) => `
                             <div class="icon-edit-row">
                                 <div class="mini-icon">${app.letter}</div>
-                                <input type="text" maxlength="1" class="input-letter" value="${app.letter}" oninput="state.apps[${i}].letter=this.value.toUpperCase(); simulatorAPI.save(); simulatorAPI.renderMain();">
-                                <input type="text" class="input-name" value="${app.name}" oninput="state.apps[${i}].name=this.value; simulatorAPI.save(); simulatorAPI.renderMain();">
+                                <input type="text" maxlength="1" style="width:30px; text-align:center;" value="${app.letter}" oninput="state.apps[${i}].letter=this.value.toUpperCase(); simulatorAPI.save(); simulatorAPI.renderMain();">
+                                <input type="text" style="flex:1;" value="${app.name}" oninput="state.apps[${i}].name=this.value; simulatorAPI.save(); simulatorAPI.renderMain();">
                             </div>
                         `).join('')}
                     </div>
-
                     <div class="tool-card">
                         <h4>Background</h4>
                         <button class="btn-black" onclick="document.getElementById('f-wp').click()">Change Wallpaper</button>
@@ -240,20 +280,27 @@
                 </div>
             `;
         },
+
         upload(input, type, extra) {
             const file = input.files[0]; if(!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const data = e.target.result;
-                if(type === 'avatar') state.userAvatar = data;
-                else if(type === 'post') state.gridImages[extra] = data;
-                else if(type === 'wallpaper') state.wallpaper = data;
-                this.save(); this.renderMain(); this.openApp(type==='wallpaper' ? 'theme' : 'space');
+                if(type === 'avatar') { cachedImages.avatar = data; await saveMedia('userAvatar', data); }
+                else if(type === 'post') { cachedImages.posts[extra] = data; await saveMedia(`post_${extra}`, data); }
+                else if(type === 'wallpaper') { cachedImages.wallpaper = data; await saveMedia('wallpaper', data); }
+                this.renderMain(); this.openApp(type==='wallpaper' ? 'theme' : 'space');
             };
             reader.readAsDataURL(file);
         }
     };
-    simulatorAPI.renderMain();
+
+    // 启动顺序：初始化数据库 -> 加载图片 -> 渲染
+    initDB().then(async () => {
+        await simulatorAPI.loadAllImages();
+        simulatorAPI.renderMain();
+    });
+    
     setInterval(() => simulatorAPI.renderMain(), 30000);
 </script>
 </body>
